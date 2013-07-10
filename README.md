@@ -28,7 +28,6 @@ A: JSON is very limited, where pyckle supports about most of Python's fancy
 * support modules properly
 * remove the recursive calls of self.visit and use ast.walk instead
 * enhance tests
-* proper arguments for SyntaxError
 
 ### SyntaxError.__init__
 

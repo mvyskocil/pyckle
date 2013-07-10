@@ -153,18 +153,19 @@ class PyckleVisitor(ast.NodeVisitor):
             isinstance(node.right, _ast.Num) and \
             (isinstance(node.left.n, complex) or isinstance(node.right.n, complex)):
                 return
+
         raise SyntaxError(
-            "Illegal expression, only complex numbers are allowed in pyckle",
-            ("<FIXME>", 0, 0, "<FIXME>"
-            ))
+            "Illegal expression, only complex numbers are allowed",
+            self._seargs(node)
+            )
 
     def visit_Name(self, node):
         if node.id in self._globals:
             return
         raise SyntaxError(
             "'{}' is not allowed name".format(node.id),
-            ("<FIXME>", 0, 0, "<FIXME>"
-            ))
+            self._seargs(node)
+            )
 
     def visit_Tuple(self, node):
         for n in node.elts:
@@ -191,6 +192,7 @@ class PyckleVisitor(ast.NodeVisitor):
         if  node.starargs is not None or \
             node.kwargs is not None:
             raise NotImplementedError("starargs or kwargs support is not implemented in visit_Call")
+
         for n in node.args:
             self.visit(n)
         for kw in node.keywords:
@@ -212,11 +214,29 @@ class PyckleVisitor(ast.NodeVisitor):
 
         raise SyntaxError(
             "'{}' is not allowed name".format(s),
-            ("<FIXME>", 0, 0, "<FIXME>"
-            ))
+            self._seargs(node)
+            )
 
     def generic_visit(self, node):
         raise SyntaxError(
             "invalid type of node: '{}'".format(node.__class__.__name__),
-            ("<FIXME>", 0, 0, "<FIXME>"
-            ))
+            self._seargs(node)
+            )
+
+    ### private methods
+
+    # prepare arguments for SyntaxError in a safe way
+    def _seargs(self, node):
+
+        assert hasattr(node, "lineno"), "node.lineno is expected for node {}".format(node)
+
+        offset = node.col_offset + 1 if hasattr(node, "col_offset") else 0
+        try:
+            line = self._source[node.lineno-1]
+        except IndexError:
+            line = "<N/A>"
+
+        return  self._filename, \
+                node.lineno,    \
+                offset,         \
+                line
