@@ -27,7 +27,10 @@ A: JSON is very limited, where pyckle supports about most of Python's fancy
 ## TODO
 * support modules properly
 * remove the recursive calls of self.visit and use ast.walk instead
-* enhance tests
+* enhance tests - catch tokenize exceptions on invalid string syntax
+* add caching
+* use better serialization than pprint
+* support comments inside documents - for writting (?)
 
 ### SyntaxError.__init__
 
