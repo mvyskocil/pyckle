@@ -203,6 +203,13 @@ class PyckleVisitor(ast.NodeVisitor):
         n = node
         l = list()
         while isinstance(n, _ast.Attribute):
+
+            if not isinstance(n.value, _ast.Name):
+                raise SyntaxError(
+                    "Only names are supported in attributes, found '{}'".format(n.value.__class__.__name__),
+                    self._seargs(node)
+                    )
+
             l.append(n.value.id)
             n = n.attr
         l.append(n)
@@ -219,7 +226,7 @@ class PyckleVisitor(ast.NodeVisitor):
 
     def generic_visit(self, node):
         raise SyntaxError(
-            "invalid type of node: '{}'".format(node.__class__.__name__),
+            "Unsupported type of node: '{}'".format(node.__class__.__name__),
             self._seargs(node)
             )
 
