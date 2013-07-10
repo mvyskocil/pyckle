@@ -119,7 +119,7 @@ class PyckleVisitor(ast.NodeVisitor):
 
     @property
     def globals(self):
-        return self._globals
+        return copy(self._globals)
 
     def parse(self):
         
@@ -128,10 +128,10 @@ class PyckleVisitor(ast.NodeVisitor):
         return node
 
     def eval(self):
-        
+
         node = self.parse()
         code = compile(node, self._filename, mode="eval")
-        return eval(code, self._globals)
+        return eval(code, self.globals)
 
     ### visit meths
     def visit_Expression(self, node):
