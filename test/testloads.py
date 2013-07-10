@@ -31,23 +31,50 @@ class TestLoads(unittest.TestCase):
     'dict(a=11, b=12)',
     'complex(2, 2)',)
     
-        self._invalid_test_cases = (
-    '1 + 2 (without j)',
-    "'a' + 'b'",
-    '(1, 2) + (3, 4)',
-    '''foo bar'.split(" ")''',
-    'Counter("abcdefghaa")',
-    'foo = 42',
-    'x = lambda x',
-    'sorted((1, 2, 3), key=lambda x: x)',
-    'def foo(): return 42',
-    'class Foo(): pass',
-    '(i for i in range(11))',
-    '[i for i in range(11)]',
-    '{i:i+1 for i in range(11)}')
+        self._unsupported_test_cases = (
+    ('1 + 2',
+        ("Illegal expression, only complex numbers are allowed",
+         "<string>", 1, 1, "1 + 2")),
+    ("'a' + 'b'",
+        ("Illegal expression, only complex numbers are allowed",
+         "<string>", 1, 1, "'a' + 'b'")),
+    ("(1, 2) + (3, 4)",
+        ("Illegal expression, only complex numbers are allowed",
+         "<string>", 1, 1, "(1, 2) + (3, 4)")),
+    ('''"foo bar".split(" ")''',
+        ("Only names are supported in attributes, found 'Str'",
+         "<string>", 1, 1, '''"foo bar".split(" ")''')),
+    ('Counter("abcdefghaa")',
+        ("'Counter' is not allowed name",
+         "<string>", 1, 1, 'Counter("abcdefghaa")')),
+    ('set((lambda x:42, ))',
+        ("Unsupported type of node: 'Lambda'",
+         "<string>", 1, 6, "set((lambda x:42, ))")),
+    ('foo = 42',
+        ("invalid syntax",
+         "<string>", 1, 5, 'foo = 42')),
+    ('def foo(): return 42',
+        ("invalid syntax",
+         "<string>", 1, 3, 'def foo(): return 42')),
+    ('class Foo(): pass',
+        ("invalid syntax",
+         "<string>", 1, 5, 'class Foo(): pass')),
+    ('(i for i in range(11))',
+        ("Unsupported type of node: 'GeneratorExp'",
+         "<string>", 1, 2, '(i for i in range(11))')),
+    ('[i for i in range(11)]',
+        ("Unsupported type of node: 'ListComp'",
+         "<string>", 1, 2, '[i for i in range(11)]')),
+    ('{i:i+1 for i in range(11)}',
+        ("Unsupported type of node: 'DictComp'",
+         "<string>", 1, 2, '{i:i+1 for i in range(11)}')),
+    ('{i for i in range(11)}',
+        ("Unsupported type of node: 'SetComp'",
+         "<string>", 1, 2, '{i for i in range(11)}')),
+        )
 
 #   'collections.Counter("abcdefghaa")')
-    def testLoads(self):
+    def testValidLoads(self):
 
         gl = PyckleVisitor.__GLOBALS__
         
@@ -58,19 +85,18 @@ class TestLoads(unittest.TestCase):
 
             self.assertEqual(ret, exp)
 
-    def testLoads2(self):
+    def testUnsupportedLoads(self):
+        
+        for string, (msg, filename, lineno, offset, text) in self._unsupported_test_cases:
 
-        gl = PyckleVisitor.__GLOBALS__
-
-        for string in self._invalid_test_cases:
-    
             try:
                 ret = loads(string)
             except SyntaxError as se:
-                #TODO: we should check the message
-                pass
+                self.assertTupleEqual(
+                (se.msg, se.filename, se.lineno, se.offset, se.text),
+                (msg,    filename,    lineno,    offset,    text))
             else:
-                self.fail("``{}'' should raise SyntaxError")
+                self.fail("``{}'' is expected to raise an exception".format(string))
 
 if __name__ == '__main__':
     unittest.main()
