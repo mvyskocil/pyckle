@@ -27,3 +27,33 @@ def _split_lines(src):
             lastline = erow
 
     return ret
+
+# split modules and return the tuple
+# >>> _split_modules('foo.bar.Baz')
+# ('foo.bar', 'foo')
+def _split_modules(mod):
+
+    ret = list()
+    
+    while '.' in mod:
+        mod = mod[:mod.rfind('.')]
+        ret.append(mod)
+
+    return tuple(ret)
+
+
+# fix imports - iow adds all undelying modules to globals
+# _fix_imports({'foo.Bar' : ...'})
+# {'foo.Bar' : ..., 'foo' : ...}
+def _fix_imports(globals):
+
+    from importlib import import_module
+
+    keys = list(globals.keys())
+
+    for key in (k for k in keys if '.' in k):
+        for mod in _split_modules(key):
+            globals[mod] = import_module(mod)
+
+    return globals
+    

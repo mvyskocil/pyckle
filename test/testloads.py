@@ -1,5 +1,6 @@
 import unittest
-import collections
+
+from copy import copy
 
 from pyckle import PyckleVisitor, loads
 
@@ -29,7 +30,8 @@ class TestLoads(unittest.TestCase):
     'set(("the", "set"))',
     'frozenset(("the", "frozenset"))',
     'dict(a=11, b=12)',
-    'complex(2, 2)',)
+    'complex(2, 2)',
+    'fractions.Fraction(22,7)',)
     
         self._unsupported_test_cases = (
     ('1 + 2',
@@ -71,17 +73,20 @@ class TestLoads(unittest.TestCase):
     ('{i for i in range(11)}',
         ("Unsupported type of node: 'SetComp'",
          "<string>", 1, 2, '{i for i in range(11)}')),
+    ('fractions.gcd(1, 2)',
+        ("'fractions.gcd' is not allowed name",
+         "<string>", 1, 1, 'fractions.gcd(1, 2)')),
         )
 
-#   'collections.Counter("abcdefghaa")')
+        self._globals = PyckleVisitor('', '').globals
+
+
     def testValidLoads(self):
 
-        gl = PyckleVisitor.__GLOBALS__
-        
         for string in self._valid_test_cases:
 
             ret = loads(string)
-            exp = eval(string, gl)
+            exp = eval(string, copy(self._globals))
 
             self.assertEqual(ret, exp)
 

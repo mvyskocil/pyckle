@@ -28,6 +28,8 @@ import datetime
 import decimal
 import fractions
 
+from .utils import _fix_imports
+
 class PyckleVisitor(ast.NodeVisitor):
 
     __GLOBALS__ = {
@@ -108,7 +110,7 @@ class PyckleVisitor(ast.NodeVisitor):
         'fractions.Fraction' : fractions.Fraction,
     }
 
-    def __init__(self, source, filename, globals=dict()):
+    def __init__(self, source, filename, globals=dict(), fix_imports=True):
 
         assert source is not isinstance(source, str), "ERROR: source must be a list or tuple of strings"
 
@@ -116,6 +118,8 @@ class PyckleVisitor(ast.NodeVisitor):
         self._filename = filename
         self._globals = copy(self.__GLOBALS__)
         self._globals.update(globals)
+        if fix_imports:
+            self._globals = _fix_imports(self._globals)
 
     @property
     def globals(self):
@@ -247,3 +251,4 @@ class PyckleVisitor(ast.NodeVisitor):
                 node.lineno,    \
                 offset,         \
                 line
+
