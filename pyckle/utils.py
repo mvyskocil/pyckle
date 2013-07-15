@@ -56,4 +56,65 @@ def _fix_imports(globals):
             globals[mod] = import_module(mod)
 
     return globals
+
+# prepare GLOBALS - this differs from python version
+def _make_globals():
     
+    try:
+        #py3
+        import builtins
+    except ImportError:
+        builtins = __builtins__
+
+    import array
+    import collections
+    import datetime
+    import decimal
+    import fractions
+
+
+    ret = { 
+        'None'      : None,
+        'True'      : True,
+        'False'     : False,
+    }
+
+    LST = (
+        'builtins.bytearray',
+        'builtins.complex',
+        'builtins.dict',
+        'builtins.float',
+        'builtins.frozenset',
+        'builtins.list',
+        'builtins.memoryview',
+        'builtins.set',
+        'array.array',
+        'collections.deque',
+        'collections.Counter',
+        'collections.ChainMap',
+        'collections.OrderedDict',
+        'collections.defaultdict',
+        'datetime.date',
+        'datetime.time',
+        'datetime.datetime',
+        'datetime.timedelta',
+        'datetime.tzinfo',
+        'datetime.timezone',
+        'decimal.Decimal',
+        'fractions.Fraction',
+        )
+
+    lc = locals()
+
+    for mod, attr in (x.split('.') for x in LST):
+        if not mod in lc:
+            continue
+        foo = getattr(lc[mod], attr)
+        if not foo:
+            continue
+        if mod == "builtins":
+            ret[attr] = foo
+        else:
+            ret['.'.join((mod, attr))] = foo
+
+    return ret

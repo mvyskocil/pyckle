@@ -13,102 +13,13 @@ from itertools import chain
 from collections import defaultdict
 from pprint import pprint, isreadable
 
-#imports for allowed names
-try:
-    #py3
-    import builtins
-    exceptions = builtins
-except ImportError:
-    #py2
-    builtins = __builtins__
-    import exceptions
-import array
-import collections
-import datetime
-import decimal
-import fractions
-
-from .utils import _fix_imports
+from .utils import _fix_imports, _make_globals
 
 class PyckleVisitor(ast.NodeVisitor):
 
-    __GLOBALS__ = {
-        'None'      : None,
-        'True'      : True,
-        'False'     : False,
-        'bytearray' : builtins.bytearray,
-        'bytes'     : builtins.bytes,
-        'complex'   : builtins.complex,
-        'dict'      : builtins.dict,
-        'float'     : builtins.float,
-        'frozenset' : builtins.frozenset,
-        'list'      : builtins.list,
-        'memoryview': builtins.memoryview,
-        'set'       : builtins.set,
-        'str'       : builtins.str,
-        'NotImplemented' :  builtins.NotImplemented,
-        'ArithmeticError' : exceptions.ArithmeticError,
-        'AssertionError' : exceptions.AssertionError,
-        'AttributeError' : exceptions.AttributeError,
-        'BaseException' : exceptions.BaseException,
-        'BufferError' : exceptions.BufferError,
-        'BytesWarning' : exceptions.BytesWarning,
-        'DeprecationWarning' : exceptions.DeprecationWarning,
-        'EOFError' : exceptions.EOFError,
-        'EnvironmentError' : exceptions.EnvironmentError,
-        'Exception' : exceptions.Exception,
-        'FloatingPointError' : exceptions.FloatingPointError,
-        'FutureWarning' : exceptions.FutureWarning,
-        'GeneratorExit' : exceptions.GeneratorExit,
-        'IOError' : exceptions.IOError,
-        'ImportError' : exceptions.ImportError,
-        'ImportWarning' : exceptions.ImportWarning,
-        'IndentationError' : exceptions.IndentationError,
-        'IndexError' : exceptions.IndexError,
-        'KeyError' : exceptions.KeyError,
-        'KeyboardInterrupt' : exceptions.KeyboardInterrupt,
-        'LookupError' : exceptions.LookupError,
-        'MemoryError' : exceptions.MemoryError,
-        'NameError' : exceptions.NameError,
-        'NotImplementedError' : exceptions.NotImplementedError,
-        'OSError' : exceptions.OSError,
-        'OverflowError' : exceptions.OverflowError,
-        'PendingDeprecationWarning' : exceptions.PendingDeprecationWarning,
-        'ReferenceError' : exceptions.ReferenceError,
-        'RuntimeError' : exceptions.RuntimeError,
-        'RuntimeWarning' : exceptions.RuntimeWarning,
-        'StopIteration' : exceptions.StopIteration,
-        'SyntaxError' : exceptions.SyntaxError,
-        'SyntaxWarning' : exceptions.SyntaxWarning,
-        'SystemError' : exceptions.SystemError,
-        'SystemExit' : exceptions.SystemExit,
-        'TabError' : exceptions.TabError,
-        'TypeError' : exceptions.TypeError,
-        'UnboundLocalError' : exceptions.UnboundLocalError,
-        'UnicodeDecodeError' : exceptions.UnicodeDecodeError,
-        'UnicodeEncodeError' : exceptions.UnicodeEncodeError,
-        'UnicodeError' : exceptions.UnicodeError,
-        'UnicodeTranslateError' : exceptions.UnicodeTranslateError,
-        'UnicodeWarning' : exceptions.UnicodeWarning,
-        'UserWarning' : exceptions.UserWarning,
-        'ValueError' : exceptions.ValueError,
-        'Warning' : exceptions.Warning,
-        'ZeroDivisionError' : exceptions.ZeroDivisionError,
-        'array.array' : array.array,
-        'collections.deque' : collections.deque,
-        'collections.Counter' : collections.Counter,
-        'collections.ChainMap' : collections.ChainMap,
-        'collections.OrderedDict' : collections.OrderedDict,
-        'collections.defaultdict' : collections.defaultdict,
-        'datetime.date' : datetime.date,
-        'datetime.time' : datetime.time,
-        'datetime.datetime' : datetime.datetime,
-        'datetime.timedelta' : datetime.timedelta,
-        'datetime.tzinfo' : datetime.tzinfo,
-        'datetime.timezone' : datetime.timezone,
-        'decimal.Decimal'   : decimal.Decimal,
-        'fractions.Fraction' : fractions.Fraction,
-    }
+
+    __GLOBALS__ = _make_globals()
+
 
     def __init__(self, source, filename, globals=dict(), fix_imports=True):
 
