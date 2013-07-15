@@ -25,20 +25,8 @@ A: JSON is very limited, where pyckle supports about most of Python's fancy
    https://github.com/jsonpickle/jsonpickle/issues/5#issuecomment-1393109
 
 ## TODO
-* support modules properly
 * remove the recursive calls of self.visit and use ast.walk instead
 * enhance tests - catch tokenize exceptions on invalid string syntax
 * add caching
 * use better serialization than pprint
 * support comments inside documents - for writting (?)
-
-### SyntaxError.__init__
-
-SyntaxError(
-    msg,
-    (   filename,
-        lineno,
-        offset,
-        line
-    ))
-
