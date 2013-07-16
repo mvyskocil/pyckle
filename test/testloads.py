@@ -103,5 +103,28 @@ class TestLoads(unittest.TestCase):
             else:
                 self.fail("``{}'' is expected to raise an exception".format(string))
 
+    def testInvalidSyntax(self):
+
+        se1, se2 = None, None
+
+        source="{foo:42"
+
+        try:
+            ret = loads(source)
+        except SyntaxError as se:
+            se1 = se
+        else:
+            self.fail("SyntaxError expected")
+        
+        try:
+            ret = eval(source)
+        except SyntaxError as se:
+            se2 = se
+        else:
+            self.fail("SyntaxError expected")
+
+        raise NotImplementedError("not yet done")
+
+
 if __name__ == '__main__':
     unittest.main()

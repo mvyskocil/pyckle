@@ -3,7 +3,7 @@
 # for a proper error reporting, one needs to print a line
 # and line number - therefor string input is tokenizes
 # in order to produce such information
-def _split_lines(src):
+def _split_lines_impl(src):
 
     import tokenize
 
@@ -33,6 +33,22 @@ def _split_lines(src):
             lastline = erow
 
     return ret
+
+# adds an error handling on top of _split_lines_impl
+def _split_lines(src):
+
+
+    import tokenize
+
+    try:
+        return _split_lines_impl(src)
+    except tokenize.TokenError as te:
+        raise SyntaxError(
+            te.args[0],
+            ("<string>",
+            te.args[1][0]-1,
+            te.args[1][1],
+            src)) #from None
 
 # split modules and return the tuple
 # >>> _split_modules('foo.bar.Baz')
