@@ -6,14 +6,20 @@
 def _split_lines(src):
 
     import tokenize
-    from io import BytesIO
+
+    try:
+        from StringIO import StringIO
+        tokenize_f = lambda src: tokenize.generate_tokens(StringIO(src).readline)
+    except ImportError:
+        from io import BytesIO
+        tokenize_f = lambda src: tokenize.tokenize(BytesIO(src.encode('utf-8')).readline)
     
     lastline = 0
 
     ret = list()
 
 
-    for toktype, tokstring, (srow, scol), (erow, ecol), line in tokenize.tokenize(BytesIO(src.encode('utf-8')).readline):
+    for toktype, tokstring, (srow, scol), (erow, ecol), line in tokenize_f(src):
 
         if srow != erow:
             raise SyntaxError("srow({}) != erow({}), on line `{}'!, which is not supported".format(srow, erow, line))
@@ -64,7 +70,7 @@ def _make_globals():
         #py3
         import builtins
     except ImportError:
-        builtins = __builtins__
+        pass
 
     import array
     import collections
@@ -79,15 +85,29 @@ def _make_globals():
         'False'     : False,
     }
 
-    LST = (
-        'builtins.bytearray',
-        'builtins.complex',
-        'builtins.dict',
-        'builtins.float',
-        'builtins.frozenset',
-        'builtins.list',
-        'builtins.memoryview',
-        'builtins.set',
+    BUILTINS = (
+        'bytearray',
+        'complex',
+        'dict',
+        'float',
+        'frozenset',
+        'list',
+        'memoryview',
+        'set',
+        )
+
+    if 'builtins' in locals():
+        getattr_f = lambda x : getattr(builtins, x, None)
+    elif '__builtins__' in globals():
+        getattr_f = lambda x : __builtins__.get(x, None)
+    else:
+        raise RuntimeError("Cannot locate builtins in your Python implementation")
+
+    # simply update ret by all 'name' : name mappings, which exists in current
+    # python implementation
+    ret.update({bltn : getattr_f(bltn) for bltn in BUILTINS if getattr_f(bltn) is not None})
+        
+    OTHERS = (
         'array.array',
         'collections.deque',
         'collections.Counter',
@@ -106,15 +126,12 @@ def _make_globals():
 
     lc = locals()
 
-    for mod, attr in (x.split('.') for x in LST):
+    for mod, attr in (x.split('.') for x in OTHERS):
         if not mod in lc:
             continue
-        foo = getattr(lc[mod], attr)
-        if not foo:
+        foo = getattr(lc[mod], attr, None)
+        if foo is None:
             continue
-        if mod == "builtins":
-            ret[attr] = foo
-        else:
-            ret['.'.join((mod, attr))] = foo
+        ret['.'.join((mod, attr))] = foo
 
     return ret
