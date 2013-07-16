@@ -26,7 +26,7 @@
 __version__ = '0.1'
 __all__ = [
     'dump', 'dumps', 'load', 'loads',
-    'PyckleVisitor'
+    'Pyckler'
     ]
 
 __author__ = 'Michal Vyskocil'
@@ -34,12 +34,12 @@ __author__ = 'Michal Vyskocil'
 import ast
 import pprint
 
-from .visitor import PyckleVisitor
+from .pyckler import Pyckler
 from .utils import _split_lines
 
 #json-like API
 
-def loads(string, cls=PyckleVisitor, globals=dict()):
+def loads(string, cls=Pyckler, globals=dict()):
     """Deserialize and evaluate string with a valid
     pyckle document to Python object
     
@@ -48,7 +48,7 @@ def loads(string, cls=PyckleVisitor, globals=dict()):
     
     Keywords:
     ``cls`` - the visitor class used for evaluation,
-    defaults to ``PyckleVisitor``
+    defaults to ``Pyckler``
     
     ``globals`` - an aditional namespace concatenated with a
     ``cls``'s default list """
@@ -62,7 +62,7 @@ def loads(string, cls=PyckleVisitor, globals=dict()):
     
     return cls(slist, "<string>", globals).eval()
 
-def load(fp, cls=PyckleVisitor, globals=dict()):
+def load(fp, cls=Pyckler, globals=dict()):
     """Deserialize and evaluate file-like object ``fp``
     with a valid pyckle document to Python object
     
@@ -71,7 +71,7 @@ def load(fp, cls=PyckleVisitor, globals=dict()):
     
     Keywords:
     ``cls`` - the visitor class used for evaluation,
-    defaults to ``PyckleVisitor``
+    defaults to ``Pyckler``
     
     ``globals`` - an aditional namespace concatenated with a
     ``cls``'s default list. """

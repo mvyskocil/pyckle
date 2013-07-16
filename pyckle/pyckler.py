@@ -15,10 +15,10 @@ from pprint import pprint, isreadable
 
 from .utils import _fix_imports, _make_globals
 
-class PyckleVisitor(ast.NodeVisitor):
+class PycklerBase(ast.NodeVisitor):
 
 
-    __GLOBALS__ = _make_globals()
+    __GLOBALS__ = {}
 
 
     def __init__(self, source, filename, globals=dict(), fix_imports=True):
@@ -163,3 +163,7 @@ class PyckleVisitor(ast.NodeVisitor):
                 offset,         \
                 line
 
+
+class Pyckler(PycklerBase):
+
+    __GLOBALS__ = _make_globals()

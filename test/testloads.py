@@ -2,7 +2,7 @@ import unittest
 
 from copy import copy
 
-from pyckle import PyckleVisitor, loads
+from pyckle import Pyckler, loads
 
 class TestLoads(unittest.TestCase):
 
@@ -78,7 +78,7 @@ class TestLoads(unittest.TestCase):
          "<string>", 1, 1, 'fractions.gcd(1, 2)')),
         )
 
-        self._globals = PyckleVisitor('', '').globals
+        self._globals = Pyckler('', '').globals
 
 
     def testValidLoads(self):
