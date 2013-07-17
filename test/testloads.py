@@ -123,8 +123,6 @@ class TestLoads(unittest.TestCase):
         else:
             self.fail("SyntaxError expected")
 
-        raise NotImplementedError("not yet done")
-
 
 if __name__ == '__main__':
     unittest.main()
