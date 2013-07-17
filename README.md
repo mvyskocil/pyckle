@@ -25,7 +25,6 @@ A: JSON is very limited, where pyckle supports about most of Python's fancy
    https://github.com/jsonpickle/jsonpickle/issues/5#issuecomment-1393109
 
 ## TODO
-* remove the recursive calls of self.visit and use ast.walk instead
 * add caching
 * use better serialization than pprint
 * support comments inside documents - for writting (?)

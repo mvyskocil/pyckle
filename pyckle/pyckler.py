@@ -15,11 +15,9 @@ from pprint import pprint, isreadable
 
 from .utils import _fix_imports, _make_globals
 
-class PycklerBase(ast.NodeVisitor):
-
+class PycklerBase():
 
     __GLOBALS__ = {}
-
 
     def __init__(self, source, filename, globals=dict(), fix_imports=True):
 
@@ -36,6 +34,17 @@ class PycklerBase(ast.NodeVisitor):
     def globals(self):
         return copy(self._globals)
 
+    def visit(self, node):
+
+        def visitor(node):
+            method = 'visit_' + node.__class__.__name__
+            visitor_f = getattr(self, method, self.generic_visit)
+            return visitor_f(node)
+
+        visitor(node)
+        for n in ast.walk(node):
+            visitor(n)
+
     def parse(self):
         
         node = ast.parse(''.join(self._source), self._filename, mode="eval")
@@ -50,7 +59,7 @@ class PycklerBase(ast.NodeVisitor):
 
     ### visit meths
     def visit_Expression(self, node):
-        self.visit(node.body)
+        #self.visit(node.body)
         return
 
     def visit_Num(self, node):
@@ -83,35 +92,22 @@ class PycklerBase(ast.NodeVisitor):
             )
 
     def visit_Tuple(self, node):
-        for n in node.elts:
-            self.visit(n)
         return
 
     def visit_List(self, node):
-        for n in node.elts:
-            self.visit(n)
         return
     
     def visit_Set(self, node):
-        for n in node.elts:
-            self.visit(n)
         return
 
     def visit_Dict(self, node):
-        for k, v in zip(node.keys, node.values):
-            self.visit(k)
-            self.visit(v)
+        return
 
     def visit_Call(self, node):
-        self.visit(node.func)
         if  node.starargs is not None or \
             node.kwargs is not None:
             raise NotImplementedError("starargs or kwargs support is not implemented in visit_Call")
 
-        for n in node.args:
-            self.visit(n)
-        for kw in node.keywords:
-            self.visit(kw.value)
         return
 
     def visit_Attribute(self, node):
@@ -139,6 +135,20 @@ class PycklerBase(ast.NodeVisitor):
             self._seargs(node)
             )
 
+    #XXX: for ctx=Load() - no idea, what's this about
+    def visit_Load(self, node):
+        return
+
+    # handled in visit_BinOp
+    def visit_Add(self, node):
+        return
+    def visit_Sub(self, node):
+        return
+
+    # foo(bar=42)
+    def visit_keyword(self, node):
+        return
+
     def generic_visit(self, node):
         raise SyntaxError(
             "Unsupported type of node: '{}'".format(node.__class__.__name__),
@@ -150,7 +160,9 @@ class PycklerBase(ast.NodeVisitor):
     # prepare arguments for SyntaxError in a safe way
     def _seargs(self, node):
 
-        assert hasattr(node, "lineno"), "node.lineno is expected for node {}".format(node)
+        #assert hasattr(node, "lineno"), "node.lineno is expected for node {}".format(node)
+        if not hasattr(node, "lineno"):
+            import pdb; pdb.set_trace()
 
         offset = node.col_offset + 1 if hasattr(node, "col_offset") else 0
         try:
