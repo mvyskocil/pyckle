@@ -160,9 +160,7 @@ class PycklerBase():
     # prepare arguments for SyntaxError in a safe way
     def _seargs(self, node):
 
-        #assert hasattr(node, "lineno"), "node.lineno is expected for node {}".format(node)
-        if not hasattr(node, "lineno"):
-            import pdb; pdb.set_trace()
+        assert hasattr(node, "lineno"), "node.lineno is expected for node {}".format(node)
 
         offset = node.col_offset + 1 if hasattr(node, "col_offset") else 0
         try:
