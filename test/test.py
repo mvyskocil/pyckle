@@ -3,7 +3,7 @@ import unittest
 from copy import copy
 from io import StringIO
 
-from pyckle import Pyckler, loads, load
+from pyckle import Pyckler, loads, load, dumps, dump
 
 VALID_TEST_CASES = (
     '42',
@@ -142,6 +142,26 @@ class TestLoad(unittest.TestCase):
             se3 = se
         else:
             self.fail("SyntaxError expected for ``{}''".format(source))
+
+class TestDump(unittest.TestCase):
+
+    def testDump(self):
+
+        for string in VALID_TEST_CASES:
+
+            obj = loads(string)
+            string2 = dumps(obj)
+            io = StringIO()
+            dump(obj, io)
+            io.seek(0)
+            string3 = io.read()
+            del io
+
+            # XXX: have no idea how to test that without explicitly mention results
+            # so lets evaluate that again and compare string -> load1 -> dump -> load2
+            self.assertEqual(obj, loads(string2))
+            self.assertEqual(obj, loads(string3))
+
 
 
 if __name__ == '__main__':

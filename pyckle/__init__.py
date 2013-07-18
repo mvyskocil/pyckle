@@ -31,8 +31,8 @@ __all__ = [
 
 __author__ = 'Michal Vyskocil'
 
-import ast
-import pprint
+from io import StringIO
+from pprint import pprint, isreadable
 
 from .pyckler import Pyckler
 from .utils import _split_lines
