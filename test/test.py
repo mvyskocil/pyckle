@@ -1,14 +1,11 @@
 import unittest
 
 from copy import copy
+from io import StringIO
 
-from pyckle import Pyckler, loads
+from pyckle import Pyckler, loads, load
 
-class TestLoads(unittest.TestCase):
-
-    def setUp(self):
-
-        self._valid_test_cases = (
+VALID_TEST_CASES = (
     '42',
     '0x42',
     '0o42',
@@ -33,7 +30,7 @@ class TestLoads(unittest.TestCase):
     'complex(2, 2)',
     'fractions.Fraction(22,7)',)
     
-        self._unsupported_test_cases = (
+UNSUPPORTED_TEST_CASES =  (
     ('1 + 2',
         ("Illegal expression, only complex numbers are allowed",
          "<string>", 1, 1, "1 + 2")),
@@ -78,21 +75,28 @@ class TestLoads(unittest.TestCase):
          "<string>", 1, 1, 'fractions.gcd(1, 2)')),
         )
 
+class TestLoad(unittest.TestCase):
+
+    def setUp(self):
+
         self._globals = Pyckler('', '').globals
 
 
-    def testValidLoads(self):
+    def testValidLoad(self):
 
-        for string in self._valid_test_cases:
+        for string in VALID_TEST_CASES:
 
             ret = loads(string)
             exp = eval(string, copy(self._globals))
 
             self.assertEqual(ret, exp)
 
-    def testUnsupportedLoads(self):
+            fp = StringIO(string)
+            self.assertEqual(ret, load(fp))
+
+    def testUnsupportedLoad(self):
         
-        for string, (msg, filename, lineno, offset, text) in self._unsupported_test_cases:
+        for string, (msg, filename, lineno, offset, text) in UNSUPPORTED_TEST_CASES:
 
             try:
                 ret = loads(string)
@@ -102,10 +106,19 @@ class TestLoads(unittest.TestCase):
                 (msg,    filename,    lineno,    offset,    text))
             else:
                 self.fail("``{}'' is expected to raise an exception".format(string))
+            
+            try:
+                ret = load(StringIO(string))
+            except SyntaxError as se:
+                self.assertTupleEqual(
+                (se.msg, se.filename, se.lineno, se.offset, se.text),
+                (msg,    "<unknown>",    lineno,    offset,    text))
+            else:
+                self.fail("``{}'' is expected to raise an exception".format(string))
 
     def testInvalidSyntax(self):
 
-        se1, se2 = None, None
+        se1, se2, se3 = None, None, None
 
         source="{foo:42"
 
@@ -114,14 +127,21 @@ class TestLoads(unittest.TestCase):
         except SyntaxError as se:
             se1 = se
         else:
-            self.fail("SyntaxError expected")
+            self.fail("SyntaxError expected for ``{}''".format(source))
         
         try:
             ret = eval(source)
         except SyntaxError as se:
             se2 = se
         else:
-            self.fail("SyntaxError expected")
+            self.fail("SyntaxError expected for ``{}''".format(source))
+        
+        try:
+            ret = load(StringIO(source))
+        except SyntaxError as se:
+            se3 = se
+        else:
+            self.fail("SyntaxError expected for ``{}''".format(source))
 
 
 if __name__ == '__main__':
