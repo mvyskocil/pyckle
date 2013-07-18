@@ -7,6 +7,7 @@ from pyckle import Pyckler, loads, load, dumps, dump
 
 VALID_TEST_CASES = (
     '42',
+    '-6',
     '0x42',
     '0o42',
     '0.42',
@@ -14,6 +15,7 @@ VALID_TEST_CASES = (
     '3.2+0.5j',
     '3.2-6.5j',
     '6.5j-4',
+    '-1-.42j',
     '"some-string"',
     'b"some-bytes"',
     'r"some-raw-string"',
@@ -31,6 +33,9 @@ VALID_TEST_CASES = (
     'fractions.Fraction(22,7)',)
     
 UNSUPPORTED_TEST_CASES =  (
+    ('not True',
+        ("Unsupported unary operator, only negative numbers are allowed",
+         "<string>", 1, 1, "not True")),
     ('1 + 2',
         ("Illegal expression, only complex numbers are allowed",
          "<string>", 1, 1, "1 + 2")),

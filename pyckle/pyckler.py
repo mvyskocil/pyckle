@@ -72,10 +72,22 @@ class PycklerBase():
         return
 
     def visit_BinOp(self, node):
-        if  isinstance(node.left, _ast.Num) and \
-            isinstance(node.op, (_ast.Add, _ast.Sub)) and \
-            isinstance(node.right, _ast.Num) and \
-            (isinstance(node.left.n, complex) or isinstance(node.right.n, complex)):
+
+        def isnumber(node):
+
+            if isinstance(node, _ast.Num):
+                return "complex" if isinstance(node.n, complex) else "number"
+            elif hasattr(node, "op") and \
+                isinstance(node.op, _ast.USub) and isinstance(node.operand, _ast.Num):
+                return "complex" if isinstance(node.operand.n, complex) else "number"
+
+            return None
+
+        foo = isnumber(node.left), isnumber(node.right)
+
+        if  None not in foo and \
+            "complex" in foo and \
+            isinstance(node.op, (_ast.Add, _ast.Sub)):
                 return
 
         raise SyntaxError(
@@ -145,9 +157,22 @@ class PycklerBase():
     def visit_Sub(self, node):
         return
 
+    # FIXME: this runs twice for complex numbers
+    def visit_UnaryOp(self, node):
+        if isinstance(node.op, _ast.USub) and isinstance(node.operand, _ast.Num):
+            return
+        raise SyntaxError(
+            "Unsupported unary operator, only negative numbers are allowed",
+            self._seargs(node)
+            )
+
+    def visit_USub(self, node):
+        return
+    
     # foo(bar=42)
     def visit_keyword(self, node):
         return
+
 
     def generic_visit(self, node):
         raise SyntaxError(
@@ -160,16 +185,15 @@ class PycklerBase():
     # prepare arguments for SyntaxError in a safe way
     def _seargs(self, node):
 
-        assert hasattr(node, "lineno"), "node.lineno is expected for node {}".format(node)
-
         offset = node.col_offset + 1 if hasattr(node, "col_offset") else 0
+        lineno = node.lineno if hasattr(node, "lineno") else -1
         try:
-            line = self._source[node.lineno-1]
+            line = self._source[lineno-1]
         except IndexError:
             line = "<N/A>"
 
         return  self._filename, \
-                node.lineno,    \
+                lineno,         \
                 offset,         \
                 line
 
