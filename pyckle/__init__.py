@@ -78,7 +78,7 @@ def load(fp, cls=Pyckler, globals=dict()):
     return cls(
         fp.readlines(),
         fp.name if hasattr(fp, "name") else "<unknown>",
-        globals)
+        globals).eval()
 
 def dumps(obj):
     """Serialize python object ``obj`` to a string and return it
