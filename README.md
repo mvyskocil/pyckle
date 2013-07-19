@@ -49,6 +49,8 @@ A: You can - in fact pyckle does use eval too, It just checks the AST tree
   SyntaxError: Unsupported type of node: 'ListComp'
 
 ## TODO
-* add caching
 * use better serialization than pprint
+  - provide full names by default (mod.submod.Class)
+  - with an ability to limit the types using globals
+* add caching
 * support comments inside documents - for writting (?)

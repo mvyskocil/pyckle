@@ -154,6 +154,9 @@ class TestDump(unittest.TestCase):
 
         for string in VALID_TEST_CASES:
 
+            if 'fractions' in string:
+                import pdb; pdb.set_trace()
+
             obj = loads(string)
             string2 = dumps(obj)
             io = StringIO()
