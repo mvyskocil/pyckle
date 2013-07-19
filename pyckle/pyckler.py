@@ -16,10 +16,24 @@ from pprint import pprint, isreadable
 from .utils import _fix_imports, _make_globals
 
 class PycklerBase():
+    """Basic class implementing all verification, parsing and evaluation
+    functionality. It does have empty __GLOBALS__, so even basic symbols like
+    None, True or False are not supported. However it makes a perfect sense to
+    use it as a subclass for your own pyckler """
 
     __GLOBALS__ = {}
 
     def __init__(self, source, filename, globals=dict(), fix_imports=True):
+        """Initialize a PycklerBase instance, which analyzes and evaluates pyckle source
+        
+        Arguments:
+        ``source`` - list or tuple of strings (each for one line)
+        ``filename`` - list or tuple of strings (each for one line)
+
+        Keywords:
+        ``globals`` - an aditional globals for visiting and evaluation
+        ``fix_imports`` - add all underlying modules into globals, defaults to True
+        """
 
         assert source is not isinstance(source, str), "ERROR: source must be a list or tuple of strings"
 
@@ -32,9 +46,14 @@ class PycklerBase():
 
     @property
     def globals(self):
+        """return copy of globals used for verification and evaluation"""
         return copy(self._globals)
 
     def visit(self, node):
+        """verify if given node impose all pyckle restrictions
+        
+        raises SyntaxError or return given node
+        """
 
         def visitor(node):
             method = 'visit_' + node.__class__.__name__
@@ -44,14 +63,22 @@ class PycklerBase():
         visitor(node)
         for n in ast.walk(node):
             visitor(n)
-
-    def parse(self):
-        
-        node = ast.parse(''.join(self._source), self._filename, mode="eval")
-        self.visit(node)
         return node
 
+    def parse(self):
+        """parse and verify the AST
+        
+        raises SyntaxError of return topmost AST node
+        """
+        
+        node = ast.parse(''.join(self._source), self._filename, mode="eval")
+        return self.visit(node)
+
     def eval(self):
+        """evaluate the code, once is parsed and verifyied
+        
+        raises SyntaxError of return Python object
+        """
 
         node = self.parse()
         code = compile(node, self._filename, mode="eval")
@@ -199,5 +226,13 @@ class PycklerBase():
 
 
 class Pyckler(PycklerBase):
+
+    """The default pyckler - it supports most common datatypes available in python
+    
+    Usage:
+    pyckler = Pyckler(["42", ], "<string>")
+    obj = pyckler.eval()
+    obj == 42
+    """
 
     __GLOBALS__ = _make_globals()

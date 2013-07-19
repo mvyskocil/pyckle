@@ -21,15 +21,32 @@
    interesting classes from Python standard library, like
    collections.dequeue or decimal.Decimal are supported by
    default via ``PyckleVisitor`` instances.
+
+Classes:
+
+   Pyckler
+
+Functions:
+
+   dump(object, file)
+   dumps(object) -> string
+   load(file) -> object
+   loads(string) -> object
+
+Misc variables:
+
+    __version__
+    __author__
+
 """
 
-__version__ = '0.1'
+__author__ = 'Michal Vyskocil'
+__version__ = '1.0'
+
 __all__ = [
     'dump', 'dumps', 'load', 'loads',
     'Pyckler'
     ]
-
-__author__ = 'Michal Vyskocil'
 
 from io import StringIO
 from pprint import pprint, isreadable
@@ -63,8 +80,8 @@ def loads(string, cls=Pyckler, globals=dict()):
     return cls(slist, "<string>", globals).eval()
 
 def load(fp, cls=Pyckler, globals=dict()):
-    """Deserialize and evaluate file-like object ``fp``
-    with a valid pyckle document to Python object
+    """Deserialize and evaluate file-like object
+    containing a valid pyckle document to Python object
     
     Arguments:
     ``fp`` - file-like object with ``.readlines()`` method
@@ -81,7 +98,10 @@ def load(fp, cls=Pyckler, globals=dict()):
         globals).eval()
 
 def dumps(obj):
-    """Serialize python object ``obj`` to a string and return it
+    """Return serialized python object as a string
+
+    Arguments:
+    ``obj`` - python object to be serialized
     
     WARNING/TODO: ``dumps`` just checks the object is not
     recursive via ``pprint.isreadable``, but does not
@@ -96,6 +116,11 @@ def dumps(obj):
     return ret.read()
 
 def dump(obj, fp):
-    """Serialize python object ``obj`` to a file-like
-    object ``fp``"""
+    """Serialize python object to a file stream
+    
+    Arguments:
+    ``obj`` - python object to be serialized
+    ``fp`` - file-like object with ``.write()`` method
+    
+    """
     return fp.write(dumps(obj))
