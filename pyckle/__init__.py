@@ -48,8 +48,7 @@ __all__ = [
     'Pyckler'
     ]
 
-from io import StringIO
-from pprint import pprint, isreadable
+from pprint import _safe_repr
 
 from .pyckler import Pyckler
 from .utils import _split_lines
@@ -107,13 +106,13 @@ def dumps(obj):
     recursive via ``pprint.isreadable``, but does not
     impose any other limits"""
 
-    if not isreadable(obj):
+    repr_string, isreadable, isrecursive = \
+        _safe_repr(obj, {}, None, 0)
+
+    if not isreadable:
         raise TypeError("'{}' is not readable".format(obj))
 
-    ret  = StringIO()
-    pprint(obj, stream=ret)
-    ret.seek(0)
-    return ret.read()
+    return repr_string
 
 def dump(obj, fp):
     """Serialize python object to a file stream
