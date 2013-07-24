@@ -26,12 +26,9 @@ class PycklerBase():
     def __init__(self, source, filename, globals=dict(), fix_imports=True):
         """Initialize a PycklerBase instance, which analyzes and evaluates pyckle source
         
-        Arguments:
-        ``source`` - list or tuple of strings (each for one line)
-        ``filename`` - list or tuple of strings (each for one line)
-
-        Keywords:
-        ``globals`` - an aditional globals for visiting and evaluation
+        :param source: The list or tuple of strings (each for one line)
+        :param filename: The name of file used for error reporting
+        :param globals: An aditional namespace mapping
         ``fix_imports`` - add all underlying modules into globals, defaults to True
         """
 
