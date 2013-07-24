@@ -1,12 +1,16 @@
 import unittest
 
+import os
 from copy import copy
+from tempfile import NamedTemporaryFile
+
 try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
 
 from pyckle import Pyckler, loads, load, dumps, dump
+from pyckle.cache import write_cache
 
 VALID_TEST_CASES = (
     '42',
@@ -173,7 +177,23 @@ class TestDump(unittest.TestCase):
             self.assertEqual(obj, loads(string2))
             self.assertEqual(obj, loads(string3))
 
+class TestCache(unittest.TestCase):
 
+    def testWriteCache(self):
+        
+        mod = __import__("fractions")
+        klass = getattr(mod, "Fraction")
+
+        obj = {(1, 2) : klass(1, 2)}
+
+        pyckle = NamedTemporaryFile(mode='w+t')
+        dump(obj, pyckle.file)
+        pyckle.file.flush()
+
+        cache = NamedTemporaryFile()
+        write_cache(pyckle.name, cache.name, _obj = obj)
+
+        self.assertNotEqual(0, os.fstat(cache.file.fileno()).st_size)
 
 if __name__ == '__main__':
     unittest.main()
