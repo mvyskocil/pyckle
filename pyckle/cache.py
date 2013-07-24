@@ -43,7 +43,7 @@ def write_cache(file, cfile=None, _obj=None):
             _obj = load(f)
 
     if cfile is None:
-        cfile = cache_path(filename)
+        cfile = cache_path(file)
 
     try:
         dirname = os.path.dirname(cfile)
@@ -64,4 +64,3 @@ def write_cache(file, cfile=None, _obj=None):
         return cfile
 
     return None
-
