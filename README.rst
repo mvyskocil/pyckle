@@ -3,7 +3,9 @@ Pyckle
 ******
 
 ``pyckle`` aims to be for Python, what is JSON for Javascript - a
-**serialization format**.  But as Python is much fancier than JS, pyckle does
+**serialization format**.
+
+As Python is much fancier than JS, pyckle does
 support more than JSON. And is batterry-included so all types likes ``sets``,
 ``lists``, ``tuples``, or ``complex`` numbers as well as interesting classes
 from Python standard library, like ``collections.dequeue`` or
@@ -14,9 +16,11 @@ FAQ
 ====
 
 **Q**: Why to define a new format and not to use any of existing ones?
+
 **A**: This is not a new format. This is Python!
 
 **Q**: What 'This is Python!' answer means?
+
 **A**:
 
 1. It is not new format, just subset of Python
@@ -25,14 +29,16 @@ FAQ
 4. And it is powerfull like Python itself
 
 **Q**: Why to not use JSON
+
 **A**: JSON is very limited, where pyckle supports about most of Python's fancy
-   types like sets, or even Decimals. Or does support more powerfull dictionaries,
-   with any "pyckealbe" type, and not just strings. So if portability between
-   languages is not an issue, pyckle is definitelly superior format.
+types like sets, or even Decimals. Or does support more powerfull dictionaries,
+with any "pyckealbe" type, and not just strings. So if portability between
+languages is not an issue, pyckle is definitelly superior format.
 
    see `<https://github.com/jsonpickle/jsonpickle/issues/5#issuecomment-1393109>`_
 
 **Q**: Talk is cheap, just show me your code
+
 **A**: np
 
  .. code-block:: python
@@ -44,6 +50,7 @@ FAQ
 {(1, '2'): [(1+2j), {1, 2, 3}]}
 
 **Q**: Well, can't I just use eval?
+
 **A**: You can - in fact pyckle does use eval too, It just checks the AST tree
 
  .. code-block:: python
