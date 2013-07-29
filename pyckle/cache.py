@@ -80,8 +80,8 @@ def load_cache(filename, cfilename=None):
         with open(cfilename, 'rb') as fp:
             if fp.read(8) != MAGIC:
                 return None
-            ctimestamp = int(rd_llong(fp))
-            csize = rd_llong(fp)
+            ctimestamp = int(_rd_llong(fp))
+            csize = _rd_llong(fp)
             if size != csize or timestamp > ctimestamp:
                 return None
             try:

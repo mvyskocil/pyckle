@@ -10,7 +10,7 @@ except ImportError:
     from io import StringIO
 
 from pyckle import Pyckler, loads, load, dumps, dump
-from pyckle.cache import write_cache
+from pyckle.cache import write_cache, load_cache
 
 VALID_TEST_CASES = (
     '42',
@@ -179,7 +179,7 @@ class TestDump(unittest.TestCase):
 
 class TestCache(unittest.TestCase):
 
-    def testWriteCache(self):
+    def testWriteLoadCache(self):
         
         mod = __import__("fractions")
         klass = getattr(mod, "Fraction")
@@ -194,6 +194,11 @@ class TestCache(unittest.TestCase):
         write_cache(obj, pyckle.name, cache.name)
 
         self.assertNotEqual(0, os.fstat(cache.file.fileno()).st_size)
+
+        obj2 = load_cache(pyckle.name, cache.name)
+
+        self.assertIsNotNone(obj2)
+        self.assertEqual(obj, obj2)
 
 if __name__ == '__main__':
     unittest.main()
