@@ -149,5 +149,40 @@ def _make_globals():
         if foo is None:
             continue
         ret['.'.join((mod, attr))] = foo
-
     return ret
+
+# guess a cache path from filename
+def _cache_path(filename):
+
+    import imp
+
+    if hasattr(imp, "cache_from_source"):
+        return imp.cache_from_source(filename) + "kle.cache"
+    else:
+        return fullname + ".cache"
+
+# write long long (8B) in little endian order to ``fp``
+# XXX: what happend on platform q/o uint64?
+def _wr_llong(fp, x):
+    import struct
+    return fp.write(struct.pack("<Q", x))
+
+# read the long number from ``fp``
+def _rd_llong(fp):
+    import struct
+    return struct.unpack("<Q", fp.read(8))[0]
+
+# return timestamp and a size of a file
+def _stat(filename, fp=None):
+
+    import os
+
+    try:
+        if hasattr(fp, "fileno"):
+            st = os.fstat(fp.fileno())
+        else:
+            st = os.stat(filename)
+    except OSError:
+        return None, None
+
+    return int(st.st_mtime), st.st_size

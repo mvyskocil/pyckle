@@ -191,7 +191,7 @@ class TestCache(unittest.TestCase):
         pyckle.file.flush()
 
         cache = NamedTemporaryFile()
-        write_cache(pyckle.name, cache.name, _obj = obj)
+        write_cache(obj, pyckle.name, cache.name)
 
         self.assertNotEqual(0, os.fstat(cache.file.fileno()).st_size)
 
