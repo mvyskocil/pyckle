@@ -1,4 +1,5 @@
 import unittest
+import time
 
 import os
 from copy import copy
@@ -179,26 +180,141 @@ class TestDump(unittest.TestCase):
 
 class TestCache(unittest.TestCase):
 
-    def testWriteLoadCache(self):
-        
+    def setUp(self):
         mod = __import__("fractions")
         klass = getattr(mod, "Fraction")
+        self.obj = {(1, 2) : klass(1, 2)}
 
-        obj = {(1, 2) : klass(1, 2)}
+    def testWriteLoadCache(self):
 
         pyckle = NamedTemporaryFile(mode='w+t')
-        dump(obj, pyckle.file)
+        dump(self.obj, pyckle.file)
         pyckle.file.flush()
 
         cache = NamedTemporaryFile()
-        write_cache(obj, pyckle.name, cache.name)
+        write_cache(self.obj, pyckle.name, cache.name)
 
         self.assertNotEqual(0, os.fstat(cache.file.fileno()).st_size)
 
         obj2 = load_cache(pyckle.name, cache.name)
 
         self.assertIsNotNone(obj2)
-        self.assertEqual(obj, obj2)
+        self.assertEqual(self.obj, obj2)
+
+    def testWriteCacheWithNoFilename(self):
+        
+        with self.assertRaises(FileNotFoundError):
+            write_cache(None, '')
+    
+    def testWriteCacheWithNotReadableFile(self):
+        
+        with self.assertRaises(PermissionError):
+            write_cache(None, '/root/.bashrc')
+    
+    def testWriteCacheWithCustomCFile(self):
+        
+        foo = NamedTemporaryFile(mode='w+t')
+        dump(self.obj, foo)
+
+        cache = NamedTemporaryFile(mode='w+b')
+        
+        write_cache(self.obj, foo.name, cfilename=cache.name)
+
+        obj2 = load_cache(foo.name, cache.name)
+        self.assertIsNotNone(obj2)
+        self.assertEqual(self.obj, obj2)
+    
+    def testWriteCacheWithInaccessbileCFile(self):
+        
+        foo = NamedTemporaryFile(mode='w+t')
+        dump(self.obj, foo)
+
+        cache = NamedTemporaryFile(mode='w+b')
+        os.chmod(cache.name, 0o000)
+        
+        with self.assertRaises(PermissionError):
+            write_cache(self.obj, foo.name, cfilename=cache.name)
+
+        obj2 = load_cache(foo.name, cache.name)
+        self.assertIsNone(obj2)
+    
+    def testWriteCacheWithInaccessbileFile(self):
+        
+        foo = NamedTemporaryFile(mode='w+t')
+        dump(self.obj, foo)
+
+        cache = NamedTemporaryFile(mode='w+b')
+        os.chmod(foo.name, 0o000)
+        
+        with self.assertRaises(PermissionError):
+            write_cache(self.obj, foo.name, cfilename=cache.name)
+
+        obj2 = None
+        with self.assertRaises(PermissionError):
+            obj2 = load_cache(foo.name, cache.name)
+        
+        os.chmod(foo.name, 0o644)
+        foo.close()
+
+        self.assertIsNone(obj2)
+
+    def testWriteOnDiskFull(self):
+
+        foo = NamedTemporaryFile(mode='w+t')
+        dump(self.obj, foo)
+
+        #FIXME: there is a ResourceWarning on unclosed '/dev/full'
+        # have no idea why as I do use with open: every time
+        # BTW: it does not happen when running the same code
+        #      outside unittest
+        with self.assertRaises(OSError):
+            write_cache(self.obj, foo.name, '/dev/full')
+
+    def testReadOutdattedCacheFile(self):
+
+        preobj = complex(1, 2)
+        pstobj = complex(2, 1)
+        foo = NamedTemporaryFile(mode='wt')
+        dump(preobj, foo)
+        #FIXME: this shall be called by dump
+        foo.flush()
+        foo.seek(0, 0)
+
+        st1 = os.fstat(foo.fileno())
+        cache = NamedTemporaryFile(mode='wb')
+        write_cache(preobj, foo.name, cache.name)
+
+        time.sleep(1.01)
+
+        dump(pstobj, foo)
+        #FIXME: likewise
+        foo.flush()
+        st2 = os.fstat(foo.fileno())
+
+        ret = load_cache(foo.name, cache.name)
+        self.assertIsNone(ret)
+
+    def testReadDifferentCacheFileSize(self):
+
+        preobj = complex(1, 2)
+        pstobj = complex(42, 1)
+        foo = NamedTemporaryFile(mode='wt')
+        dump(preobj, foo)
+        #FIXME: this shall be called by dump
+        foo.flush()
+        foo.seek(0, 0)
+
+        st1 = os.fstat(foo.fileno())
+        cache = NamedTemporaryFile(mode='wb')
+        write_cache(preobj, foo.name, cache.name)
+
+        dump(pstobj, foo)
+        #FIXME: likewise
+        foo.flush()
+        st2 = os.fstat(foo.fileno())
+
+        ret = load_cache(foo.name, cache.name)
+        self.assertIsNone(ret)
 
 if __name__ == '__main__':
     unittest.main()
