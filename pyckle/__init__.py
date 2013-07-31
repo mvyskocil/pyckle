@@ -20,7 +20,7 @@
    more than JSON. And is batterry-included so all
    interesting classes from Python standard library, like
    collections.dequeue or decimal.Decimal are supported by
-   default via ``PyckleVisitor`` instances.
+   default via ``Pyckler`` instances.
 
 Classes:
 
@@ -60,15 +60,11 @@ def loads(string, cls=Pyckler, globals=dict()):
     """Deserialize and evaluate string with a valid
     pyckle document to Python object
     
-    Arguments:
-    ``string`` - the (unicode) string or string list with a document
-    
-    Keywords:
-    ``cls`` - the visitor class used for evaluation,
-    defaults to ``Pyckler``
-    
-    ``globals`` - an aditional namespace concatenated with a
-    ``cls``'s default list """
+    :param string: The (unicode) string or string list with a document
+    :param cls: The visitor class used for evaluation, defaults to Pyckler_
+    :param globals: An aditional namespace concatenated with a
+        ``cls``'s default list
+    """
 
     if isinstance(string, str):
         slist = _split_lines(string)
@@ -83,15 +79,11 @@ def load(fp, cls=Pyckler, globals=dict(), use_cache=False, cfilename=None):
     """Deserialize and evaluate file-like object
     containing a valid pyckle document to Python object
     
-    Arguments:
-    ``fp`` - file-like object with ``.readlines()`` method
-    
-    Keywords:
-    ``cls`` - the visitor class used for evaluation,
-    defaults to ``Pyckler``
-    
-    ``globals`` - an aditional namespace concatenated with a
-    ``cls``'s default list. """
+    :param fp: The file-like object with ``.readlines()`` method
+    :param cls: The visitor class used for evaluation, defaults to ``Pyckler``
+    :param globals: An aditional namespace concatenated with a
+        ``cls``'s default list
+    """
 
     if use_cache and hasattr(fp, "name"):
         try:
@@ -107,8 +99,9 @@ def load(fp, cls=Pyckler, globals=dict(), use_cache=False, cfilename=None):
 def dumps(obj):
     """Return serialized python object as a string
 
-    Arguments:
-    ``obj`` - python object to be serialized
+    :param obj: The python object to be serialized
+
+    :return: serialized object as a string
     
     WARNING/TODO: ``dumps`` just checks the object is not
     recursive via ``pprint.isreadable``, but does not
@@ -125,11 +118,13 @@ def dumps(obj):
 def dump(obj, fp, use_cache=False, cfilename=None):
     """Serialize python object to a file stream
     
-    Arguments:
-    ``obj`` - python object to be serialized
-    ``fp`` - file-like object with ``.write()`` method
+    :param obj: The python object to be serialized
+    :param fp: The file-like object with ``.write()`` method
     
+    :return: what underlying ``.write()`` method returns,
+    mostly number of written bytes
     """
+
     ret = fp.write(dumps(obj))
     fp.flush()
     if use_cache and hasattr(fp, "name"):
