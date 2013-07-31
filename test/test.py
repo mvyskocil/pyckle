@@ -1,5 +1,7 @@
 import unittest
 import time
+import random
+import timeit
 
 import os
 from copy import copy
@@ -320,6 +322,71 @@ class TestCache(unittest.TestCase):
         with self.assertRaisesRegex(CacheMismatchError, "size mismatch"):
             ret = read_cache(foo.name, cache.name)
             self.assertIsNone(ret)
+
+class TestCacheWithNiceAPI(unittest.TestCase):
+    
+    def setUp(self):
+        mod = __import__("fractions")
+        klass = getattr(mod, "Fraction")
+        self.obj = {(1, 2) : klass(1, 2)}
+    
+    def testWriteLoadCache(self):
+
+        pyckle = NamedTemporaryFile(mode='w+t')
+        cache = NamedTemporaryFile()
+        dump(self.obj, pyckle, use_cache=True, cfilename=cache.name)
+
+        self.assertNotEqual(0, os.fstat(cache.file.fileno()).st_size)
+
+        obj2 = load(pyckle, use_cache=True, cfilename=cache.name)
+
+        self.assertIsNotNone(obj2)
+        self.assertEqual(self.obj, obj2)
+
+    #skipped the rest of tests as they are done in TestCache
+
+    def testCacheSpeed(self):
+        """
+        This is very indirect way how to test cache,
+        however quite logical
+
+        Code measure the speed of calling uncached load
+        versus cached one. The speedub should be factor 50
+        at least, but it'll be bigger for larger objects
+
+        """
+        
+        # number of attempts
+        N = 40
+        # how much faster is to use cache
+        SPEEDUP_FACTOR = 50
+
+        bigobj = {k:v for k, v in enumerate(random.randrange(1024) for i in range(32*1024))}
+
+        uncached = NamedTemporaryFile(mode='w+t')
+        dump(bigobj, uncached, use_cache=False)
+
+        cached = NamedTemporaryFile(mode='w+t')
+        cachee = NamedTemporaryFile(mode='wb')
+        dump(bigobj, cached, use_cache=True, cfilename=cachee.name)
+
+        #uncached.seek(0,0)
+        #cached.seek(0,0)
+        #cachee.seek(0,0)
+
+
+        def luc():
+            uncached.seek(0,0)
+            load(uncached)
+        ret1 = timeit.timeit(luc, "gc.enable()", number=N)
+        def lca():
+            cachee.seek(0,0)
+            load(cached, "gc.enable()", use_cache=True, cfilename=cachee.name)
+        ret2 = timeit.timeit(lca, number=N)
+
+        self.assertGreater(ret1, ret2)
+        self.assertGreater(ret1 // ret2, SPEEDUP_FACTOR)
+
 
 if __name__ == '__main__':
     unittest.main()

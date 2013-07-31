@@ -50,6 +50,7 @@ __all__ = [
 
 from pprint import _safe_repr
 
+from .cache import CacheMismatchError, read_cache, write_cache
 from .pyckler import Pyckler
 from .utils import _split_lines
 
@@ -78,7 +79,7 @@ def loads(string, cls=Pyckler, globals=dict()):
     
     return cls(slist, "<string>", globals).eval()
 
-def load(fp, cls=Pyckler, globals=dict()):
+def load(fp, cls=Pyckler, globals=dict(), use_cache=False, cfilename=None):
     """Deserialize and evaluate file-like object
     containing a valid pyckle document to Python object
     
@@ -91,6 +92,13 @@ def load(fp, cls=Pyckler, globals=dict()):
     
     ``globals`` - an aditional namespace concatenated with a
     ``cls``'s default list. """
+
+    if use_cache and hasattr(fp, "name"):
+        try:
+            return read_cache(fp.name, cfilename)
+        except CacheMismatchError:
+            pass
+
     return cls(
         fp.readlines(),
         fp.name if hasattr(fp, "name") else "<unknown>",
@@ -114,7 +122,7 @@ def dumps(obj):
 
     return repr_string
 
-def dump(obj, fp):
+def dump(obj, fp, use_cache=False, cfilename=None):
     """Serialize python object to a file stream
     
     Arguments:
@@ -122,4 +130,8 @@ def dump(obj, fp):
     ``fp`` - file-like object with ``.write()`` method
     
     """
-    return fp.write(dumps(obj))
+    ret = fp.write(dumps(obj))
+    fp.flush()
+    if use_cache and hasattr(fp, "name"):
+        write_cache(obj, fp.name, cfilename)
+    return ret
