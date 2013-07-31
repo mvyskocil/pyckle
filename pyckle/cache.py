@@ -25,18 +25,21 @@ an ugly API intentionally as they shall be called from main load/dump functions
 only.
 """
 
+class CacheMismatchError(IOError):
+    pass
+
 def write_cache(obj, filename, cfilename=None):
     """Write cache of pyckle file
 
     :param obj: The object to write.
-    :param file: The source file name, where obj has been serialized.
-    :param cfile: Target cache-file, default to PEP 3147 location
+    :param filename: The source file name, where obj has been serialized.
+    :param cfilename: Target cache-file, default to PEP 3147 location
 
     :return:  Path to resulting cache file or None if not written
 
     **WARNING**: note that caller is responsible to use the same ``obj`` than the
                  one serialized in ``file``, otherwise bad things will happen. The
-                 content of cfile is used as is and not checked, so it can contain
+                 content of cfilename is used as is and not checked, so it can contain
                  any arbitrary python code.
     """
 
@@ -67,7 +70,16 @@ def write_cache(obj, filename, cfilename=None):
 
     return None
 
-def load_cache(filename, cfilename=None):
+def read_cache(filename, cfilename=None):
+    """Read a cache of pyckle file
+
+    :param filename: The source file name, where obj has been serialized.
+    :param cfilename: Target cache-file, default to PEP 3147 location
+
+    :return: The unpickled object or raises CacheMismatchError if cache
+             does not match with a filename
+
+    """
 
     if cfilename is None:
         cfilename = _cache_path(file)
@@ -76,19 +88,18 @@ def load_cache(filename, cfilename=None):
         timestamp, size = _stat(filename, fp)
         size &= LL_MASK
 
-    try:
-        with open(cfilename, 'rb') as fp:
-            if fp.read(8) != MAGIC:
-                return None
-            ctimestamp = int(_rd_llong(fp))
-            csize = _rd_llong(fp)
-            if size != csize or timestamp > ctimestamp:
-                return None
-            try:
-                return pickle.load(fp)
-            except UnpicklingError:
-                return None
-    except IOError:
-        return None
-
-    assert False, "Can't get here!"
+    with open(cfilename, 'rb') as fp:
+        if fp.read(8) != MAGIC:
+            raise CacheMismatchError("unexpected magic")
+        ctimestamp = int(_rd_llong(fp))
+        csize = _rd_llong(fp)
+        if size != csize:
+            raise CacheMismatchError("size mismatch")
+        if timestamp > ctimestamp:
+            raise CacheMismatchError("timestamp mismatch")
+        try:
+            return pickle.load(fp)
+        except UnpicklingError:
+            pass
+        raise CacheMismatchError("unpickling error")
+    raise CacheMismatchError("IOError")

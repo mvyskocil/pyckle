@@ -11,7 +11,7 @@ except ImportError:
     from io import StringIO
 
 from pyckle import Pyckler, loads, load, dumps, dump
-from pyckle.cache import write_cache, load_cache
+from pyckle.cache import CacheMismatchError, write_cache, read_cache
 
 VALID_TEST_CASES = (
     '42',
@@ -196,7 +196,7 @@ class TestCache(unittest.TestCase):
 
         self.assertNotEqual(0, os.fstat(cache.file.fileno()).st_size)
 
-        obj2 = load_cache(pyckle.name, cache.name)
+        obj2 = read_cache(pyckle.name, cache.name)
 
         self.assertIsNotNone(obj2)
         self.assertEqual(self.obj, obj2)
@@ -220,7 +220,7 @@ class TestCache(unittest.TestCase):
         
         write_cache(self.obj, foo.name, cfilename=cache.name)
 
-        obj2 = load_cache(foo.name, cache.name)
+        obj2 = read_cache(foo.name, cache.name)
         self.assertIsNotNone(obj2)
         self.assertEqual(self.obj, obj2)
     
@@ -235,8 +235,9 @@ class TestCache(unittest.TestCase):
         with self.assertRaises(PermissionError):
             write_cache(self.obj, foo.name, cfilename=cache.name)
 
-        obj2 = load_cache(foo.name, cache.name)
-        self.assertIsNone(obj2)
+        with self.assertRaisesRegex(PermissionError, "Permission denied"):
+            obj2 = read_cache(foo.name, cache.name)
+            self.assertIsNone(obj2)
     
     def testWriteCacheWithInaccessbileFile(self):
         
@@ -251,7 +252,7 @@ class TestCache(unittest.TestCase):
 
         obj2 = None
         with self.assertRaises(PermissionError):
-            obj2 = load_cache(foo.name, cache.name)
+            obj2 = read_cache(foo.name, cache.name)
         
         os.chmod(foo.name, 0o644)
         foo.close()
@@ -267,6 +268,8 @@ class TestCache(unittest.TestCase):
         # have no idea why as I do use with open: every time
         # BTW: it does not happen when running the same code
         #      outside unittest
+        # probably related to CPython, see my old issue about /dev/full
+        # http://bugs.python.org/issue10815
         with self.assertRaises(OSError):
             write_cache(self.obj, foo.name, '/dev/full')
 
@@ -291,8 +294,9 @@ class TestCache(unittest.TestCase):
         foo.flush()
         st2 = os.fstat(foo.fileno())
 
-        ret = load_cache(foo.name, cache.name)
-        self.assertIsNone(ret)
+        with self.assertRaisesRegex(CacheMismatchError, "timestamp mismatch"):
+            ret = read_cache(foo.name, cache.name)
+            self.assertIsNone(ret)
 
     def testReadDifferentCacheFileSize(self):
 
@@ -313,8 +317,9 @@ class TestCache(unittest.TestCase):
         foo.flush()
         st2 = os.fstat(foo.fileno())
 
-        ret = load_cache(foo.name, cache.name)
-        self.assertIsNone(ret)
+        with self.assertRaisesRegex(CacheMismatchError, "size mismatch"):
+            ret = read_cache(foo.name, cache.name)
+            self.assertIsNone(ret)
 
 if __name__ == '__main__':
     unittest.main()
