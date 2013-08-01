@@ -1,12 +1,28 @@
 import unittest
+import time
+import random
+import timeit
+import os
+import sys
 
 from copy import copy
+from tempfile import NamedTemporaryFile
+
+# python2 compatibility
 try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
 
+# python2 compatibility
+try:
+    PermissionError
+except NameError:
+    PermissionError = IOError
+    FileNotFoundError = IOError
+
 from pyckle import Pyckler, loads, load, dumps, dump
+from pyckle.cache import CacheMismatchError, write_cache, read_cache
 
 VALID_TEST_CASES = (
     '42',
@@ -173,6 +189,223 @@ class TestDump(unittest.TestCase):
             self.assertEqual(obj, loads(string2))
             self.assertEqual(obj, loads(string3))
 
+class TestCache(unittest.TestCase):
+
+    def setUp(self):
+        mod = __import__("fractions")
+        klass = getattr(mod, "Fraction")
+        self.obj = {(1, 2) : klass(1, 2)}
+
+    def testWriteLoadCache(self):
+
+        pyckle = NamedTemporaryFile(mode='w+t')
+        dump(self.obj, pyckle.file)
+        pyckle.file.flush()
+
+        cache = NamedTemporaryFile()
+        write_cache(self.obj, pyckle.name, cache.name)
+
+        self.assertNotEqual(0, os.fstat(cache.file.fileno()).st_size)
+
+        obj2 = read_cache(pyckle.name, cache.name)
+
+        self.assertIsNotNone(obj2)
+        self.assertEqual(self.obj, obj2)
+
+    def testWriteCacheWithNoFilename(self):
+        
+        with self.assertRaises(FileNotFoundError):
+            write_cache(None, '')
+    
+    def testWriteCacheWithNotReadableFile(self):
+        
+        with self.assertRaises(PermissionError):
+            write_cache(None, '/root/.bashrc')
+    
+    def testWriteCacheWithCustomCFile(self):
+        
+        foo = NamedTemporaryFile(mode='w+t')
+        dump(self.obj, foo)
+
+        cache = NamedTemporaryFile(mode='w+b')
+        
+        write_cache(self.obj, foo.name, cfilename=cache.name)
+
+        obj2 = read_cache(foo.name, cache.name)
+        self.assertIsNotNone(obj2)
+        self.assertEqual(self.obj, obj2)
+    
+    def testWriteCacheWithInaccessbileCFile(self):
+        
+        foo = NamedTemporaryFile(mode='w+t')
+        dump(self.obj, foo)
+
+        cache = NamedTemporaryFile(mode='w+b')
+        os.chmod(cache.name, 0o000)
+
+        #
+        with self.assertRaises(PermissionError):
+            write_cache(self.obj, foo.name, cfilename=cache.name)
+
+        with self.assertRaisesRegexp(PermissionError, "Permission denied"):
+            obj2 = read_cache(foo.name, cache.name)
+            self.assertIsNone(obj2)
+    
+    def testWriteCacheWithInaccessbileFile(self):
+        
+        foo = NamedTemporaryFile(mode='w+t')
+        dump(self.obj, foo)
+
+        cache = NamedTemporaryFile(mode='w+b')
+        os.chmod(foo.name, 0o000)
+        
+        with self.assertRaises(PermissionError):
+            write_cache(self.obj, foo.name, cfilename=cache.name)
+
+        obj2 = None
+        with self.assertRaises(PermissionError):
+            obj2 = read_cache(foo.name, cache.name)
+        
+        os.chmod(foo.name, 0o644)
+        foo.close()
+
+        self.assertIsNone(obj2)
+
+    def testWriteOnDiskFull(self):
+
+        foo = NamedTemporaryFile(mode='w+t')
+        dump(self.obj, foo)
+
+        # python2 compatibility
+        if sys.version_info[0] == 2:
+            err = IOError
+        else:
+            err = OSError
+
+        #FIXME: there is a ResourceWarning on unclosed '/dev/full'
+        # have no idea why as I do use with open: every time
+        # BTW: it does not happen when running the same code
+        #      outside unittest
+        # probably related to CPython, see my old issue about /dev/full
+        # http://bugs.python.org/issue10815
+        with self.assertRaises(err):
+            write_cache(self.obj, foo.name, '/dev/full')
+
+    def testReadOutdattedCacheFile(self):
+
+        preobj = complex(1, 2)
+        pstobj = complex(2, 1)
+        foo = NamedTemporaryFile(mode='wt')
+        dump(preobj, foo)
+        #FIXME: this shall be called by dump
+        foo.flush()
+        foo.seek(0, 0)
+
+        st1 = os.fstat(foo.fileno())
+        cache = NamedTemporaryFile(mode='wb')
+        write_cache(preobj, foo.name, cache.name)
+
+        time.sleep(1.01)
+
+        dump(pstobj, foo)
+        #FIXME: likewise
+        foo.flush()
+        st2 = os.fstat(foo.fileno())
+
+        with self.assertRaisesRegexp(CacheMismatchError, "timestamp mismatch"):
+            ret = read_cache(foo.name, cache.name)
+            self.assertIsNone(ret)
+
+    def testReadDifferentCacheFileSize(self):
+
+        preobj = complex(1, 2)
+        pstobj = complex(42, 1)
+        foo = NamedTemporaryFile(mode='wt')
+        dump(preobj, foo)
+        #FIXME: this shall be called by dump
+        foo.flush()
+        foo.seek(0, 0)
+
+        st1 = os.fstat(foo.fileno())
+        cache = NamedTemporaryFile(mode='wb')
+        write_cache(preobj, foo.name, cache.name)
+
+        dump(pstobj, foo)
+        #FIXME: likewise
+        foo.flush()
+        st2 = os.fstat(foo.fileno())
+
+        with self.assertRaisesRegexp(CacheMismatchError, "size mismatch"):
+            ret = read_cache(foo.name, cache.name)
+            self.assertIsNone(ret)
+
+class TestCacheWithNiceAPI(unittest.TestCase):
+    
+    def setUp(self):
+        mod = __import__("fractions")
+        klass = getattr(mod, "Fraction")
+        self.obj = {(1, 2) : klass(1, 2)}
+    
+    def testWriteLoadCache(self):
+
+        pyckle = NamedTemporaryFile(mode='w+t')
+        cache = NamedTemporaryFile()
+        dump(self.obj, pyckle, use_cache=True, cfilename=cache.name)
+
+        self.assertNotEqual(0, os.fstat(cache.file.fileno()).st_size)
+
+        obj2 = load(pyckle, use_cache=True, cfilename=cache.name)
+
+        self.assertIsNotNone(obj2)
+        self.assertEqual(self.obj, obj2)
+
+    #INFO: skipped the rest of tests as they are done in TestCache
+
+    # python2 compatibility
+    @unittest.skipIf(sys.version_info[0] < 3,
+        "speedup is so sloow in cpython 2, need to rework")
+    def testCacheSpeed(self):
+        """
+        This is very indirect way how to test cache,
+        however quite logical
+
+        Code measure the speed of calling uncached load
+        versus cached one. The speedub should be factor 50
+        at least, but it'll be bigger for larger objects
+
+        """
+        
+        # number of attempts
+        N = 16
+        # how much faster is to use cache
+        SPEEDUP_FACTOR = 80
+
+        bigobj = {k:v for k, v in enumerate(random.randrange(1024) for i in range(32*1024))}
+
+        uncached = NamedTemporaryFile(mode='w+t')
+        dump(bigobj, uncached, use_cache=False)
+
+        cached = NamedTemporaryFile(mode='w+t')
+        cachee = NamedTemporaryFile(mode='wb')
+        dump(bigobj, cached, use_cache=True, cfilename=cachee.name)
+
+        #uncached.seek(0,0)
+        #cached.seek(0,0)
+        #cachee.seek(0,0)
+
+
+        def luc():
+            uncached.seek(0,0)
+            load(uncached)
+        ret1 = timeit.timeit(luc, "gc.enable()", number=N)
+        def lca():
+            cachee.seek(0,0)
+            load(cached, "gc.enable()", use_cache=True, cfilename=cachee.name)
+        ret2 = timeit.timeit(lca, number=N)
+
+        import pdb; pdb.set_trace()
+        self.assertGreater(ret1, ret2)
+        self.assertGreater(ret1 // ret2, SPEEDUP_FACTOR)
 
 
 if __name__ == '__main__':

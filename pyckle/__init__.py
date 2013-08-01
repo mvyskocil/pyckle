@@ -20,7 +20,7 @@
    more than JSON. And is batterry-included so all
    interesting classes from Python standard library, like
    collections.dequeue or decimal.Decimal are supported by
-   default via ``PyckleVisitor`` instances.
+   default via ``Pyckler`` instances.
 
 Classes:
 
@@ -50,6 +50,7 @@ __all__ = [
 
 from pprint import _safe_repr
 
+from .cache import CacheMismatchError, read_cache, write_cache
 from .pyckler import Pyckler
 from .utils import _split_lines
 
@@ -75,7 +76,7 @@ def loads(string, cls=Pyckler, globals=dict()):
     
     return cls(slist, "<string>", globals).eval()
 
-def load(fp, cls=Pyckler, globals=dict()):
+def load(fp, cls=Pyckler, globals=dict(), use_cache=False, cfilename=None):
     """Deserialize and evaluate file-like object
     containing a valid pyckle document to Python object
     
@@ -85,6 +86,12 @@ def load(fp, cls=Pyckler, globals=dict()):
 
     :return: Resulting python object
     """
+
+    if use_cache and hasattr(fp, "name"):
+        try:
+            return read_cache(fp.name, cfilename)
+        except CacheMismatchError:
+            pass
 
     return cls(
         fp.readlines(),
@@ -100,7 +107,8 @@ def dumps(obj):
     
     WARNING/TODO: ``dumps`` just checks the object is not
     recursive via ``pprint.isreadable``, but does not
-    impose any other limits"""
+    impose any other limits
+    """
 
     repr_string, isreadable, isrecursive = \
         _safe_repr(obj, {}, None, 0)
@@ -110,11 +118,18 @@ def dumps(obj):
 
     return repr_string
 
-def dump(obj, fp):
+def dump(obj, fp, use_cache=False, cfilename=None):
     """Serialize python object to a file stream
     
     :param obj: The python object to be serialized
-    :param fp:  Thefile-like object with ``.write()`` method
+    :param fp: The file-like object with ``.write()`` method
     
+    :return: what underlying ``.write()`` method returns,
+    mostly number of written bytes
     """
-    return fp.write(dumps(obj))
+
+    ret = fp.write(dumps(obj))
+    fp.flush()
+    if use_cache and hasattr(fp, "name"):
+        write_cache(obj, fp.name, cfilename)
+    return ret
