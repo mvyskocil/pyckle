@@ -17,5 +17,16 @@ setup(name=b'pyckle',
     the poor set of builtin objects. So it does support all fancy python
     builtin datatypes like sets or complex numbers as well as few usefull types
     from standard library like fractions.Fraction.'''
+    classifiers = [
+        b'Development Status :: 5 - Production/Stable',
+        b'Intended Audience :: Developers',
+        b'License :: OSI Approved :: MIT License',
+        b'Operating System :: OS Independent',
+        b'Programming Language :: Python :: 2.7',
+        b'Programming Language :: Python :: 3.3',
+        b'Programming Language :: Python :: Implementation :: CPython',
+        b'Programming Language :: Python :: Implementation :: PyPy',
+        b'Topic :: Software Development :: Libraries :: Python Modules',
+        ]
     )
 

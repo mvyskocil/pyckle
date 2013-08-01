@@ -72,5 +72,4 @@ TODO
  * use better serialization than ``pprint``
    - provide full names by default (``mod.submod.Class``)
    - with an ability to limit the types using globals
- * add caching
  * support comments inside documents - for writting (?)

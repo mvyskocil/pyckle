@@ -1,0 +1,16 @@
+v1.93
+
+ * cache implementation
+ * unitests for cache
+ * converted README to reStructured text
+ * fix doc strings of main functions
+ * (c)python2 compatibility
+ * pypy2 compatibility
+ * add changelog
+ * add classifiers
+
+
+v1.0
+======
+ * initial release
+ * support load/loads, dump/dumps

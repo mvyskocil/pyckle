@@ -41,7 +41,7 @@ Misc variables:
 """
 
 __author__ = 'Michal Vyskocil'
-__version__ = '1.0'
+__version__ = '1.93'
 
 __all__ = [
     'dump', 'dumps', 'load', 'loads',
