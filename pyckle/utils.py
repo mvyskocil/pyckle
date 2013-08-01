@@ -112,11 +112,19 @@ def _make_globals():
         'set',
         )
 
+    getattr_f = None
     if 'builtins' in locals():
+        #py3
         getattr_f = lambda x : getattr(builtins, x, None)
     elif '__builtins__' in globals():
-        getattr_f = lambda x : __builtins__.get(x, None)
-    else:
+        if hasattr(__builtins__, "get"):
+            #python2
+            getattr_f = lambda x : __builtins__.get(x, None)
+        elif hasattr(__builtins__, "getattr"):
+            #pypy2
+            getattr_f = lambda x : getattr(__builtins__, x, None)
+
+    if getattr_f is None:
         raise RuntimeError("Cannot locate builtins in your Python implementation")
 
     # simply update ret by all 'name' : name mappings, which exists in current
