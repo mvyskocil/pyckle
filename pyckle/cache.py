@@ -8,7 +8,17 @@ import errno
 import pickle
 import tokenize
 
-from _pickle import UnpicklingError
+# python2 compatibility
+if hasattr(tokenize, "open"):
+    _open = lambda filename: tokenize.open(filename)
+else:
+    _open = lambda filename: open(filename, 'U')
+
+# python2 compatibility
+try:
+    from _pickle import UnpicklingError
+except ImportError:
+    from pickle import UnpicklingError
 
 from pyckle.utils import _cache_path, _wr_llong, _rd_llong, _stat
 
@@ -43,7 +53,7 @@ def write_cache(obj, filename, cfilename=None):
                  any arbitrary python code.
     """
 
-    with tokenize.open(filename) as fp:
+    with _open(filename) as fp:
         timestamp, size = _stat(filename, fp)
         size &= LL_MASK
 
@@ -84,7 +94,7 @@ def read_cache(filename, cfilename=None):
     if cfilename is None:
         cfilename = _cache_path(file)
 
-    with tokenize.open(filename) as fp:
+    with _open(filename) as fp:
         timestamp, size = _stat(filename, fp)
         size &= LL_MASK
 
